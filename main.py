@@ -2,7 +2,6 @@ from user import User
 from session_end_point import SessionEndPoint
 from utils import convert_to_bytes
 
-
 alice = User('Alice')
 bob = User('Bob')
 
@@ -35,6 +34,6 @@ bob_end_point.start_session()
 
 print(bob_end_point.shared_key == alice_end_point.shared_key)
 
-iv, msg = alice_end_point.symmetric_key_scheme.encrypt(b"a secret messagea secret message")
+iv, msg = alice_end_point.encrypt(b'fsdf, world!')
 
-print(bob_end_point.symmetric_key_scheme.decrypt(iv, msg))
+print(bob_end_point.decrypt(iv, msg))
