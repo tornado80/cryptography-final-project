@@ -3,7 +3,7 @@
 ## Introduction
 
 This repository contains the cryptography course's final project which involved, <br>
-designing a secure protocol over an insecure communication chanell.
+designing a secure protocol over an insecure communication channel.
 
 ## Components used
 - HMAC
