@@ -1,9 +1,11 @@
 from DH_key_exchange import DHKeyExchange
 from Symmetric_key import SymmetricKey
 from Signature import RSASignature
-
 from cryptography.hazmat.primitives.asymmetric import rsa
 from cryptography.hazmat.backends import default_backend
+
+from session_end_point import SessionEndPoint
+
 
 class User(object):
     def __init__(self, name):
@@ -14,36 +16,24 @@ class User(object):
             backend=default_backend()
         )
         self.public_key = self.private_key.public_key()
-        
-        self.verify_key_session = RSASignature(self.private_key, self.public_key)
+        self.rsa_signature_scheme = RSASignature(self.private_key, self.public_key)
 
-        ###############################################
-        self.exchange_key_session = DHKeyExchange()
+    def sign_dh_public_key(self, session_end_point: SessionEndPoint):
+        return self.rsa_signature_scheme.sign(session_end_point.public_key)
 
-        self.communication_session = None
-        self.shared_key = None
-        ###############################################
-    
-    def sign_public_key(self):
-        return self.verify_key_session.sign(self.exchange_key_session.public_key)
-    
-
-    def verify_peer_public_key(self, public_key, signature):
-        return self.verify_key_session.verify(public_key, signature)
-
-
-    def generate_shared_key(self, other_peer_key):
-        self.shared_key =  self.exchange_key_session.get_shared_key(other_peer_key)
-        self.session = SymmetricKey(self.shared_key)
-        return self.shared_key
+    def verify_peer_dh_public_key(self, peer_dh_public_key, signature):
+        return self.rsa_signature_scheme.verify(peer_dh_public_key, signature)
 
 
 if __name__ == '__main__':
     alice = User('Alice')
     bob = User('Bob')
 
-    singed_session_public_key_of_alice = alice.sign_public_key()
-    if(not bob.verify_key_session.verify(bob.public_key, singed_session_public_key_of_alice)):
+    alice_end_point = SessionEndPoint()
+    bob_end_point = SessionEndPoint()
+
+    signed_dh_public_key_of_alice = alice.sign_dh_public_key()
+    if not bob.verify_key_session.verify(bob.public_key, signed_dh_public_key_of_alice):
         print('Alice public key is valid')
         exit()
     
