@@ -2,9 +2,34 @@ from rsa_signature import RSASignature
 from user import User
 from session_end_point import SessionEndPoint
 from utils import convert_to_bytes
+from certificate_authority import CertificateAuthority
 
 alice = User('alice')
 bob = User('bob')
+
+CA = CertificateAuthority()
+
+certificate_public_key_alice = CA.issue_certificate(alice.public_key)
+certificate_public_key_bob = CA.issue_certificate(bob.public_key)
+
+
+# Bob checks the certificate of Alice
+if not RSASignature.verify(
+            CA.public_key,
+            convert_to_bytes(alice.public_key),
+            certificate_public_key_alice):
+    print('Alice\'s public key is not verified')
+    exit()
+
+
+# Alice checks the certificate of Bob
+if not RSASignature.verify(
+            CA.public_key,
+            convert_to_bytes(bob.public_key),
+            certificate_public_key_bob):
+    print('Bob\'s public key is not verified')
+    exit()
+
 
 alice_end_point = SessionEndPoint()
 bob_end_point = SessionEndPoint()
