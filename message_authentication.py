@@ -17,5 +17,5 @@ class HMAC:
         try:
             h.verify(mac)
             return True
-        except:
+        except Exception as e:
             return False
