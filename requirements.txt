@@ -1,4 +1,2 @@
 cryptography==37.0.2
 pycryptodome==3.15.0
-
-rpyc==5.1.0
