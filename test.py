@@ -3,8 +3,8 @@ from user import User
 from session_end_point import SessionEndPoint
 from utils import convert_to_bytes
 
-alice = User('Alice')
-bob = User('Bob')
+alice = User()
+bob = User()
 
 alice_end_point = SessionEndPoint()
 bob_end_point = SessionEndPoint()
