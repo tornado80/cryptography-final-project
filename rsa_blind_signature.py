@@ -2,52 +2,75 @@ import cryptomath
 import random
 from user import User
 
+from typing import Tuple
 
-def rsa_generate(bits=1024):
-    # Generates public and private keys and saves them to a file.
-    p = cryptomath.findPrime(bits)
-    q = cryptomath.findPrime(bits)
-    phi = (p - 1) * (q - 1)
-    n = p * q
-    found_encryption_key = False
-    while not found_encryption_key:
-        a = random.randint(2, phi - 1)
-        if cryptomath.gcd(a, phi) == 1:
-            found_encryption_key = True
-    b = cryptomath.findModInverse(a, phi)
-    sk = (n, a)
-    pk = (n, b)
-    return sk, pk
+from cryptography.hazmat.backends import default_backend
+from cryptography.hazmat.primitives.asymmetric import rsa
+from cryptography.hazmat.primitives import hashes
+
+PublicKey = Tuple[int, int]
+PrivateKey = Tuple[int, int]
 
 
-def blind_message(message, pk):
-    n, b = pk
-    r = random.randint(2, n - 1)
-    blind_message = (message * pow(r, b, n)) % n
-    return r, blind_message
+def find_relative_prime_number(n):
+    while range(10):
+        p = random.randint(2, n - 1)
+        if cryptomath.gcd(p, n) == 1:
+            return p
+    raise ValueError("Apocalypse")
 
 
-def sign(blind_message, sk):
-    n, a = sk
-    return pow(blind_message, a, n)
+def digest_message_to_int(message: bytes):
+    digest = hashes.Hash(hashes.SHA256(), backend=default_backend())
+    digest.update(message)
+    hashed_message = digest.finalize()
+    return int.from_bytes(hashed_message, byteorder='big')
 
 
-def unblind_signature(blind_sign, r, pk):
-    n, b = pk
-    r_inv = cryptomath.findModInverse(r, n)
-    return (blind_sign * r_inv) % n
+def generate_rsa() -> (PrivateKey, PublicKey):
+    private_key = rsa.generate_private_key(
+        public_exponent=65537,
+        key_size=512,
+        backend=default_backend()
+    )
+    public_key = private_key.public_key()
+    n = public_key.public_numbers().n
+    a, b = private_key.private_numbers().d, public_key.public_numbers().e
+    return (n, a), (n, b)
 
 
-def verify(message, signature, pk):
-    n, b = pk
-    return pow(signature, b, n) == message
+def blind(message: int, signer_public_key: PublicKey) -> (int, int):
+    n, b = signer_public_key
+    opening_value = find_relative_prime_number(n)
+    blinded_message = (message * pow(opening_value, b, n)) % n
+    return opening_value, blinded_message
+
+
+def sign(blinded_message: int, signer_private_key: PrivateKey):
+    n, a = signer_private_key
+    return pow(blinded_message, a, n)
+
+
+def unblind_signature(blind_signature: int, opening_value: int, signer_public_key: PublicKey):
+    n, b = signer_public_key
+    r_inv = pow(opening_value, -1, n)
+    return (blind_signature * r_inv) % n
+
+
+def verify(message: int, message_signature: int, singer_public_key: PublicKey):
+    n, b = singer_public_key
+    return pow(message_signature, b, n) == message
 
 
 if __name__ == '__main__':
     bob = User("Bob")
     msg = bob.public_key.public_numbers().e
-    sk, pk = rsa_generate()
-    r, blind_message = blind_message(int(msg), pk)
+    msg += bob.public_key.public_numbers().n
+
+    msg_hash = digest_message_to_int(msg.to_bytes(128, byteorder='big'))
+
+    sk, pk = generate_rsa()
+    r, blind_message = blind(msg_hash, pk)
     signature = sign(blind_message, sk)
     unblind_sign = unblind_signature(signature, r, pk)
-    print(verify(msg, unblind_sign, pk))
+    print(verify(msg_hash, unblind_sign, pk))
