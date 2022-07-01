@@ -40,6 +40,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.session_end_point: SessionEndPoint = None
         self.peer_public_key: RSAPublicKey = None
         self.peer_dh_public_key: DHPublicKey = None
+        self.user_signed_dh_public_key: DHPublicKey = None
         self.verify_peer_public_key_push_button.clicked.connect(self.verify_peer_public_key_push_button_clicked)
         self.generate_shared_key_push_button.clicked.connect(self.generate_shared_key_push_button_clicked)
         self.encrypt_push_button.clicked.connect(self.encrypt_push_button_clicked)
