@@ -35,7 +35,7 @@ class RSASignature:
                 password=None,
                 backend=default_backend()
             )
-        return private_key, pem
+        return private_key
 
     @staticmethod
     def public_key_from_str(public_key_str: str):
@@ -50,23 +50,29 @@ class RSASignature:
             public_key = RSASignature.public_key_from_str(public_key_file.read())
         return public_key
 
-    def convert_private_key_to_pem(self) -> str:
-        return self.__private_key.private_bytes(
+    @staticmethod
+    def convert_private_key_to_pem(private_key: RSAPrivateKey) -> str:
+        return private_key.private_bytes(
                 encoding=serialization.Encoding.PEM,
                 format=serialization.PrivateFormat.TraditionalOpenSSL,
                 encryption_algorithm=serialization.NoEncryption()
         ).decode('utf-8')
 
-    def convert_public_key_to_pem(self) -> str:
-        return self.__public_key.public_bytes(
+    @staticmethod
+    def public_key_to_pem(public_key: RSAPublicKey):
+        return public_key.public_bytes(
             encoding=serialization.Encoding.PEM,
             format=serialization.PublicFormat.SubjectPublicKeyInfo
         ).decode('utf-8')
 
-    def save_private_key(self, private_key_path: str):
+    def convert_public_key_to_pem(self) -> str:
+        return self.public_key_to_pem(self.__public_key)
+
+    @staticmethod
+    def save_private_key(private_key_path: str, private_key: RSAPrivateKey):
         with open(private_key_path, 'w') as private_key_file:
             private_key_file.write(
-                self.convert_private_key_to_pem()
+                RSASignature.convert_private_key_to_pem(private_key)
             )
 
     def save_public_key(self, public_key_path: str):

@@ -1,4 +1,6 @@
+import base64
 import json
+import sys
 
 from PySide2.QtWidgets import QApplication, QMainWindow, QMessageBox
 
@@ -11,19 +13,9 @@ from user_window_ui import Ui_MainWindow
 from rsa_signature import RSASignature
 from DH_key_exchange import DHKeyExchange
 
-import os
 from base64 import b64encode, b64decode
 from datetime import datetime
-from utils import convert_to_bytes
-
-
-def load_default_private_and_private_key(path: str) -> (RSAPrivateKey, RSAPublicKey):
-    if os.path.exists(path):
-        private_key = RSASignature.load_private_key(path)
-        public_key = private_key.public_key()
-        return private_key, public_key
-    else:
-        return RSASignature.generate_rsa()
+from utils import convert_to_bytes, load_default_private_and_private_key
 
 
 class MainWindow(QMainWindow, Ui_MainWindow):
@@ -37,30 +29,58 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.my_public_key_plain_text_edit.setPlainText(
             self.user.get_public_key_pem()
         )
+        self.ca_public_key = RSASignature.load_public_key('ca_pub.pem')
+        self.ca_public_key_plain_text_edit.setPlainText(
+            RSASignature.public_key_to_pem(self.ca_public_key)
+        )
         self.session_end_point: SessionEndPoint = None
         self.peer_public_key: RSAPublicKey = None
+        self.peer_signed_public_key = None
+
         self.peer_dh_public_key: DHPublicKey = None
         self.user_signed_dh_public_key: DHPublicKey = None
+
         self.verify_peer_public_key_push_button.clicked.connect(self.verify_peer_public_key_push_button_clicked)
         self.generate_shared_key_push_button.clicked.connect(self.generate_shared_key_push_button_clicked)
         self.encrypt_push_button.clicked.connect(self.encrypt_push_button_clicked)
         self.decrypt_push_button.clicked.connect(self.decrypt_push_button_clicked)
+        self.back_push_button.clicked.connect(self.back_push_button_clicked)
+        self.blind_push_button.clicked.connect(self.blind_push_button_clicked)
+        self.unblind_push_button.clicked.connect(self.unblind_push_button_clicked)
 
     def verify_peer_public_key_push_button_clicked(self):
         if self.peer_public_key_plain_text_edit.toPlainText() == "":
             QMessageBox.critical(self, "Error", "You have not entered peer's public key!")
             return
-        self.session_end_point = SessionEndPoint()
+
+        if self.ca_signature_on_peer_public_key_plain_text_edit.toPlainText() == "":
+            QMessageBox.critical(self, "Error", "You have not entered CA's signature on peer's public key!")
+            return
+
+        self.peer_signed_public_key = b64decode(self.ca_signature_on_peer_public_key_plain_text_edit.toPlainText())
+
         self.peer_public_key = RSASignature.public_key_from_str(
             self.peer_public_key_plain_text_edit.toPlainText()
         )
+
+        if not RSASignature.verify(
+                self.ca_public_key,
+                convert_to_bytes(self.peer_public_key),
+                self.peer_signed_public_key):
+            QMessageBox.critical(self, "Error", "Peer's public key could not be verified with the signature.")
+            return
+
+        self.session_end_point = SessionEndPoint()
+
         self.user_signed_dh_public_key = self.user.sign_dh_public_key(
             self.session_end_point
         )
         self.stackedWidget.setCurrentWidget(self.step2)
+
         self.my_dh_public_key_plain_text_edit.setPlainText(
             self.session_end_point.public_key_pem
         )
+
         self.my_signature_on_my_dh_public_key_plain_text_edit.setPlainText(
             b64encode(self.user_signed_dh_public_key).decode('utf-8')
         )
@@ -126,9 +146,22 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             return
         self.decrypted_message_plain_text_edit.setPlainText(decrypted_data.decode('utf-8'))
 
+    def back_push_button_clicked(self):
+        if self.stackedWidget.currentIndex() > 0:
+            self.stackedWidget.setCurrentIndex(self.stackedWidget.currentIndex() - 1)
+        else:
+            if self.stackedWidget2.currentIndex() > 0:
+                self.stackedWidget2.setCurrentIndex(self.stackedWidget2.currentIndex() - 1)
+
+    def blind_push_button_clicked(self):
+        pass
+
+    def unblind_push_button_clicked(self):
+        pass
 
 if __name__ == "__main__":
     app = QApplication()
     main_window = MainWindow("alice.pem")  # sys.argv[1]
     main_window.show()
     app.exec_()
+
