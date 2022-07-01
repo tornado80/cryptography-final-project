@@ -7,6 +7,7 @@ from PySide2.QtWidgets import QApplication, QMainWindow, QMessageBox
 from cryptography.hazmat.primitives.asymmetric.dh import DHPublicKey
 from cryptography.hazmat.primitives.asymmetric.rsa import RSAPrivateKey, RSAPublicKey
 
+import rsa_blind_signature
 from session_end_point import SessionEndPoint
 from user import User
 from user_window_ui import Ui_MainWindow
@@ -35,7 +36,9 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         )
         self.session_end_point: SessionEndPoint = None
         self.peer_public_key: RSAPublicKey = None
-        self.peer_signed_public_key = None
+        self.my_signature_on_my_public_key: bytes = None
+        self.peer_signed_public_key: bytes = None
+        self.opening_value = None
 
         self.peer_dh_public_key: DHPublicKey = None
         self.user_signed_dh_public_key: DHPublicKey = None
@@ -154,10 +157,30 @@ class MainWindow(QMainWindow, Ui_MainWindow):
                 self.stackedWidget2.setCurrentIndex(self.stackedWidget2.currentIndex() - 1)
 
     def blind_push_button_clicked(self):
-        pass
+        msg_num = rsa_blind_signature.digest_message_to_int(convert_to_bytes(self.user.public_key))
+        self.opening_value, blinded_message = rsa_blind_signature.blind(msg_num, self.ca_public_key)
+        self.blind_public_key_plain_text_edit.setPlainText(
+            b64encode(rsa_blind_signature.convert_int_to_bytes(blinded_message)).decode('utf-8')
+        )
 
     def unblind_push_button_clicked(self):
-        pass
+        if self.blind_signature_plain_text_edit.toPlainText() == "":
+            QMessageBox.critical(self, "Error", "You have not entered blinded signature!")
+            return
+        blind_signature = rsa_blind_signature.convert_bytes_to_int(
+            b64decode(self.blind_signature_plain_text_edit.toPlainText())
+        )
+        self.my_signature_on_my_public_key = rsa_blind_signature.convert_int_to_bytes(
+            rsa_blind_signature.unblind_signature(
+                blind_signature,
+                self.opening_value,
+                self.ca_public_key
+            )
+        )
+        self.ca_signature_on_my_public_key_plain_text_edit.setPlainText(
+            b64encode(self.my_signature_on_my_public_key)
+        )
+
 
 if __name__ == "__main__":
     app = QApplication()

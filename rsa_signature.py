@@ -119,10 +119,3 @@ class RSASignature:
             return True
         except InvalidSignature:
             return False
-
-
-if __name__ == '__main__':
-    rsa_scheme = RSASignature.create_scheme()
-    rsa_scheme.save_private_key('private_key.pem')
-    rsa_scheme.save_public_key('public_key.pem')
-    print(rsa_scheme.convert_private_key_to_pem())

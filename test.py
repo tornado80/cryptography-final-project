@@ -4,11 +4,13 @@ from session_end_point import SessionEndPoint
 from utils import convert_to_bytes
 from certificate_authority import CertificateAuthority
 
-alice = User('alice')
-bob = User('bob')
+alice = User()
+bob = User()
 
 
-CA = CertificateAuthority(*RSASignature.generate_rsa())
+CA = CertificateAuthority()
+
+CA.set_private_key_and_public_key(*RSASignature.generate_rsa())
 
 alice.set_private_key_and_public_key(*RSASignature.generate_rsa())
 bob.set_private_key_and_public_key(*RSASignature.generate_rsa())

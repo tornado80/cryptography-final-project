@@ -15,6 +15,6 @@ class CertificateAuthority:
     def public_key(self):
         return self.rsa_signature_scheme.public_key
 
-    def issue_certificate(self, certificate_owner_public_key: RSAPublicKey) -> bytes:
-        return self.rsa_signature_scheme.sign(convert_to_bytes(certificate_owner_public_key))
+    def issue_certificate(self, certificate_owner_public_key: bytes) -> bytes:
+        return self.rsa_signature_scheme.sign(certificate_owner_public_key)
 

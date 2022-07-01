@@ -22,6 +22,14 @@ def digest_message_to_int(message: bytes):
     return int.from_bytes(hashed_message, byteorder='big')
 
 
+def convert_int_to_bytes(int_value: int):
+    return int_value.to_bytes(int_value.bit_length() // 8 + 1, byteorder='big')
+
+
+def convert_bytes_to_int(bytes_value: bytes):
+    return int.from_bytes(bytes_value, byteorder='big')
+
+
 def blind(message: int, signer_public_key: RSAPublicKey) -> (int, int):
     n, b = signer_public_key.public_numbers().n, signer_public_key.public_numbers().e
     opening_value = find_relative_prime_number(n)
@@ -37,7 +45,7 @@ def sign(blinded_message: int, signer_private_key: RSAPrivateKey):
 
 def unblind_signature(blind_signature: int, opening_value: int, signer_public_key: RSAPublicKey):
     n, b = signer_public_key.public_numbers().n, signer_public_key.public_numbers().e
-    r_inv = pow(opening_value, -1, n)
+    r_inv = cryptomath.findModInverse(opening_value, n)
     return (blind_signature * r_inv) % n
 
 

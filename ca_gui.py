@@ -25,11 +25,9 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         if self.user_public_key_plain_text_edit.toPlainText() == '':
             QMessageBox.critical(self, "Error", "You have not entered user's public key!")
             return
-        user_public_key = RSASignature.public_key_from_str(
-            self.user_public_key_plain_text_edit.toPlainText()
-        )
+        user_blinded_public_key = base64.b64decode(self.user_public_key_plain_text_edit.toPlainText())
         self.signature_plain_text_edit.setPlainText(
-            base64.b64encode(self.ca.issue_certificate(user_public_key)).decode('utf-8')
+            base64.b64encode(self.ca.issue_certificate(user_blinded_public_key)).decode('utf-8')
         )
 
 
