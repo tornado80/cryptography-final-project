@@ -1,5 +1,5 @@
 from cryptography.hazmat.backends import default_backend
-from cryptography.hazmat.primitives import hashes
+from cryptography.hazmat.primitives import hashes, serialization
 from cryptography.hazmat.primitives.kdf.hkdf import HKDF
 from cryptography.hazmat.primitives.asymmetric import dh
 
@@ -36,6 +36,12 @@ class DHKeyExchange(object):
         self.public_key = self.private_key.public_key()
         self.backend = default_backend()
 
+    def get_public_key_pem(self):
+        return self.public_key.public_bytes(
+            encoding=serialization.Encoding.PEM,
+            format=serialization.PublicFormat.SubjectPublicKeyInfo
+        ).decode('utf-8')
+
     def get_shared_key(self, other_peer_public_key) -> bytes:
         self.shared_key = self.private_key.exchange(other_peer_public_key)
         return HKDF(
@@ -45,3 +51,10 @@ class DHKeyExchange(object):
             info=None,
             backend=self.backend
         ).derive(self.shared_key)
+
+    @staticmethod
+    def public_key_from_str(public_key_str: str):
+        return serialization.load_pem_public_key(
+            public_key_str.encode('utf-8'),
+            backend=default_backend()
+        )

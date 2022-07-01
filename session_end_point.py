@@ -18,6 +18,10 @@ class SessionEndPoint:
         return self.__shared_key
 
     @property
+    def public_key_pem(self):
+        return self.__dh_key_exchange_scheme.get_public_key_pem()
+
+    @property
     def public_key(self) -> DHPublicKey:
         return self.__dh_key_exchange_scheme.public_key
     
@@ -34,7 +38,7 @@ class SessionEndPoint:
 
         text = unpad(self.__symmetric_key_scheme.decrypt(iv, message), 16)
         if not self.__authentication_scheme.vrfy_mac(text, mac):
-            raise Exception('Message is not valid')
+            return None
         return text
 
     def register_peer_dh_public_key(self, peer_dh_public_key):

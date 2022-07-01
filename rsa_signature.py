@@ -27,42 +27,66 @@ class RSASignature:
         return signature
 
     @staticmethod
-    def load_private_key(private_key_path: str):
-        with open(private_key_path, 'rb') as private_key_file:
+    def load_private_key(private_key_path: str) -> (RSAPrivateKey, str):
+        with open(private_key_path, 'r') as private_key_file:
+            pem = private_key_file.read()
             private_key = serialization.load_pem_private_key(
-                private_key_file.read(),
+                pem.encode('utf-8'),
                 password=None,
                 backend=default_backend()
             )
-        return private_key
+        return private_key, pem
+
+    @staticmethod
+    def public_key_from_str(public_key_str: str):
+        return serialization.load_pem_public_key(
+            public_key_str.encode('utf-8'),
+            backend=default_backend()
+        )
 
     @staticmethod
     def load_public_key(public_key_path: str):
-        with open(public_key_path, 'rb') as public_key_file:
-            public_key = serialization.load_pem_public_key(
-                public_key_file.read(),
-                backend=default_backend()
-            )
+        with open(public_key_path, 'r') as public_key_file:
+            public_key = RSASignature.public_key_from_str(public_key_file.read())
         return public_key
 
+    def convert_private_key_to_pem(self) -> str:
+        return self.__private_key.private_bytes(
+                encoding=serialization.Encoding.PEM,
+                format=serialization.PrivateFormat.TraditionalOpenSSL,
+                encryption_algorithm=serialization.NoEncryption()
+        ).decode('utf-8')
+
+    def convert_public_key_to_pem(self) -> str:
+        return self.__public_key.public_bytes(
+            encoding=serialization.Encoding.PEM,
+            format=serialization.PublicFormat.SubjectPublicKeyInfo
+        ).decode('utf-8')
+
     def save_private_key(self, private_key_path: str):
-        with open(private_key_path, 'wb') as private_key_file:
+        with open(private_key_path, 'w') as private_key_file:
             private_key_file.write(
-                self.__private_key.private_bytes(
-                    encoding=serialization.Encoding.PEM,
-                    format=serialization.PrivateFormat.TraditionalOpenSSL,
-                    encryption_algorithm=serialization.NoEncryption()
-                )
+                self.convert_private_key_to_pem()
             )
 
     def save_public_key(self, public_key_path: str):
-        with open(public_key_path, 'wb') as public_key_file:
+        with open(public_key_path, 'w') as public_key_file:
             public_key_file.write(
                 self.__public_key.public_bytes(
                     encoding=serialization.Encoding.PEM,
                     format=serialization.PublicFormat.SubjectPublicKeyInfo
-                )
+                ).decode('utf-8')
             )
+
+    @classmethod
+    def create_scheme(cls):
+        private_key, public_key = cls.generate_rsa()
+        return cls(private_key, public_key)
+
+    @classmethod
+    def create_scheme_from_private_key(cls, private_key: RSAPrivateKey):
+        public_key = private_key.public_key()
+        return cls(private_key, public_key)
 
     @staticmethod
     def generate_rsa() -> (RSAPrivateKey, RSAPublicKey):
@@ -89,3 +113,10 @@ class RSASignature:
             return True
         except InvalidSignature:
             return False
+
+
+if __name__ == '__main__':
+    rsa_scheme = RSASignature.create_scheme()
+    rsa_scheme.save_private_key('private_key.pem')
+    rsa_scheme.save_public_key('public_key.pem')
+    print(rsa_scheme.convert_private_key_to_pem())

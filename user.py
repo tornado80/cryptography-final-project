@@ -7,8 +7,7 @@ from utils import convert_to_bytes
 
 
 class User:
-    def __init__(self, name):
-        self.name = name
+    def __init__(self):
         self.__rsa_signature_scheme: RSASignature = None
 
     def set_private_key_and_public_key(self, private_key: RSAPrivateKey, public_key: RSAPublicKey):
@@ -17,6 +16,9 @@ class User:
     @property
     def public_key(self) -> RSAPublicKey:
         return self.__rsa_signature_scheme.public_key
+    
+    def get_public_key_pem(self) -> str:
+        return self.__rsa_signature_scheme.convert_public_key_to_pem()
     
     def sign_dh_public_key(self, session_end_point: SessionEndPoint) -> bytes:
         return self.__rsa_signature_scheme.sign(convert_to_bytes(session_end_point.public_key))
