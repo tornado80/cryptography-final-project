@@ -7,7 +7,11 @@ from certificate_authority import CertificateAuthority
 alice = User('alice')
 bob = User('bob')
 
-CA = CertificateAuthority()
+
+CA = CertificateAuthority(*RSASignature.generate_rsa())
+
+alice.set_private_key_and_public_key(*RSASignature.generate_rsa())
+bob.set_private_key_and_public_key(*RSASignature.generate_rsa())
 
 certificate_public_key_alice = CA.issue_certificate(alice.public_key)
 certificate_public_key_bob = CA.issue_certificate(bob.public_key)
@@ -42,11 +46,11 @@ if not RSASignature.verify(
     print("Alice's DH public key does not match with the signature.")
     exit()
 
-signed_session_public_key_of_bob = bob.sign_dh_public_key(bob_end_point)
+signed_dh_public_key_of_bob = bob.sign_dh_public_key(bob_end_point)
 if not RSASignature.verify(
         bob.public_key,
         convert_to_bytes(bob_end_point.public_key), 
-        signed_session_public_key_of_bob):
+        signed_dh_public_key_of_bob):
     print("Bob's DH public key does not match with the signature.")
     exit()
 

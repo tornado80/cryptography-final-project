@@ -1,15 +1,18 @@
 from cryptography.hazmat.primitives.asymmetric.dh import DHPublicKey
-from cryptography.hazmat.primitives.asymmetric.rsa import RSAPublicKey
+from cryptography.hazmat.primitives.asymmetric.rsa import RSAPublicKey, RSAPrivateKey
 
 from rsa_signature import RSASignature
 from session_end_point import SessionEndPoint
 from utils import convert_to_bytes
 
 
-class User(object):
+class User:
     def __init__(self, name):
         self.name = name
-        self.__rsa_signature_scheme = RSASignature()
+        self.__rsa_signature_scheme: RSASignature = None
+
+    def set_private_key_and_public_key(self, private_key: RSAPrivateKey, public_key: RSAPublicKey):
+        self.__rsa_signature_scheme = RSASignature(private_key, public_key)
 
     @property
     def public_key(self) -> RSAPublicKey:
