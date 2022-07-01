@@ -60,21 +60,23 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             QMessageBox.critical(self, "Error", "You have not entered CA's signature on peer's public key!")
             return
 
-        self.peer_signed_public_key = b64decode(self.ca_signature_on_peer_public_key_plain_text_edit.toPlainText())
+        self.peer_signed_public_key = rsa_blind_signature.convert_bytes_to_int(
+            b64decode(self.ca_signature_on_peer_public_key_plain_text_edit.toPlainText())
+        )
 
         self.peer_public_key = RSASignature.public_key_from_str(
             self.peer_public_key_plain_text_edit.toPlainText()
         )
 
-        if not RSASignature.verify(
-                self.ca_public_key,
-                convert_to_bytes(self.peer_public_key),
-                self.peer_signed_public_key):
+        digested_peer_public_key = rsa_blind_signature.digest_message_to_int(convert_to_bytes(self.peer_public_key))
+        if not rsa_blind_signature.verify(
+                digested_peer_public_key,
+                self.peer_signed_public_key,
+                self.ca_public_key):
             QMessageBox.critical(self, "Error", "Peer's public key could not be verified with the signature.")
             return
 
         self.session_end_point = SessionEndPoint()
-
         self.user_signed_dh_public_key = self.user.sign_dh_public_key(
             self.session_end_point
         )
@@ -178,8 +180,9 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             )
         )
         self.ca_signature_on_my_public_key_plain_text_edit.setPlainText(
-            b64encode(self.my_signature_on_my_public_key)
+            b64encode(self.my_signature_on_my_public_key).decode('utf-8')
         )
+        self.stackedWidget2.setCurrentWidget(self.step12)
 
 
 if __name__ == "__main__":
@@ -187,4 +190,3 @@ if __name__ == "__main__":
     main_window = MainWindow("alice.pem")  # sys.argv[1]
     main_window.show()
     app.exec_()
-

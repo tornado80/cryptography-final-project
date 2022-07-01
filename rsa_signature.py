@@ -75,10 +75,11 @@ class RSASignature:
                 RSASignature.convert_private_key_to_pem(private_key)
             )
 
-    def save_public_key(self, public_key_path: str):
+    @staticmethod
+    def save_public_key(public_key_path: str, public_key: RSAPublicKey):
         with open(public_key_path, 'w') as public_key_file:
             public_key_file.write(
-                self.__public_key.public_bytes(
+                public_key.public_bytes(
                     encoding=serialization.Encoding.PEM,
                     format=serialization.PublicFormat.SubjectPublicKeyInfo
                 ).decode('utf-8')

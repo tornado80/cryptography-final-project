@@ -6,6 +6,8 @@ import random
 from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives import hashes
 
+from rsa_signature import RSASignature
+
 
 def find_relative_prime_number(n):
     while range(10):
@@ -52,4 +54,21 @@ def unblind_signature(blind_signature: int, opening_value: int, signer_public_ke
 def verify(message: int, message_signature: int, singer_public_key: RSAPublicKey):
     n, b = singer_public_key.public_numbers().n, singer_public_key.public_numbers().e
     return pow(message_signature, b, n) == message
+
+
+if __name__ == '__main__':
+    # Generate keys
+    private_key, public_key = RSASignature.generate_rsa()
+
+    # Sign message
+    message = b"Hello, world!"
+    message_int = digest_message_to_int(message)
+    opening_value, blinded_message = blind(message_int, public_key)
+    signature = sign(blinded_message, private_key)
+
+    # Unblind signature
+    unblinded_signature = unblind_signature(signature, opening_value, public_key)
+
+    # Verify signature
+    assert verify(message_int, unblinded_signature, public_key)
 
